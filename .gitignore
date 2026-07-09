@@ -31,6 +31,12 @@ ssh_proxy_launch.sh
 ssh_proxy_sshuttle.pid
 ssh_proxy_runtime/
 
+# Build artifacts
+build/
+dist/
+*.spec.bak
+img/logo.icns
+
 # IDE / editor
 .idea/
 .vscode/

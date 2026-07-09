@@ -6,17 +6,16 @@ import queue
 import re
 import threading
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox, ttk
 
 from elevation import elevation_hint
-from platform_util import is_macos, platform_label
+from platform_util import bundle_path, is_macos, platform_label
 from settings import AppSettings, load_settings, save_settings
 from system_proxy import SystemProxy
 from tunnel import SSHTunnel, TunnelConfig
 from vpn_tunnel import SSHuttleTunnel
 
-LOGO_PATH = Path(__file__).resolve().parent / "img" / "logo.png"
+LOGO_PATH = bundle_path("img", "logo.png")
 
 
 class EasySSHApp:

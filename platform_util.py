@@ -10,6 +10,15 @@ import tempfile
 from pathlib import Path
 
 
+def bundle_path(*parts: str) -> Path:
+    """Resolve bundled asset paths for dev and PyInstaller builds."""
+    if getattr(sys, "frozen", False):
+        base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    else:
+        base = Path(__file__).resolve().parent
+    return base.joinpath(*parts)
+
+
 def is_macos() -> bool:
     return platform.system() == "Darwin"
 

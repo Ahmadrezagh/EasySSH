@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: EasySSH-macOS.zip
+            asset_name: EasySSH-macOS
+          - os: ubuntu-latest
+            artifact: EasySSH-Linux.tar.gz
+            asset_name: EasySSH-Linux
+          - os: windows-latest
+            artifact: EasySSH-Windows.zip
+            asset_name: EasySSH-Windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-build.txt
+
+      - name: Create macOS icon
+        if: runner.os == 'macOS'
+        run: bash scripts/make_icns.sh
+
+      - name: Build app
+        run: pyinstaller --noconfirm easyssh.spec
+
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent EasySSH.app ../EasySSH-macOS.zip
+
+      - name: Package Linux app
+        if: runner.os == 'Linux'
+        run: |
+          cd dist
+          tar -czf ../EasySSH-Linux.tar.gz EasySSH
+
+      - name: Package Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/EasySSH -DestinationPath EasySSH-Windows.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.artifact }}
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/EasySSH-macOS.zip
+            artifacts/EasySSH-Linux.tar.gz
+            artifacts/EasySSH-Windows.zip

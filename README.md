@@ -35,7 +35,7 @@ Setting the OS system SOCKS proxy to `127.0.0.1:1080` routes **all** traffic thr
 ## Setup
 
 ```bash
-cd ssh_proxy
+cd EasySSH
 python3 -m venv .venv
 
 # macOS / Linux
@@ -53,11 +53,33 @@ pip install -r requirements.txt
 pip install pydivert
 ```
 
-## Run
+## Run from source
 
 ```bash
 python main.py
 ```
+
+## Install from release (recommended)
+
+Download the latest release for your platform from  
+**[GitHub Releases](https://github.com/Ahmadrezagh/EasySSH/releases)**.
+
+| Platform | Download | How to run |
+|----------|----------|------------|
+| **macOS** | `EasySSH-macOS.zip` | Unzip → open `EasySSH.app` |
+| **Windows** | `EasySSH-Windows.zip` | Unzip → run `EasySSH/EasySSH.exe` |
+| **Linux** | `EasySSH-Linux.tar.gz` | Extract → run `EasySSH/EasySSH` |
+
+> **Note:** OpenSSH (`ssh`) must still be installed on your system. VPN mode may prompt for admin/root access.
+
+### Create a new release (maintainers)
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Pushing a `v*` tag triggers [GitHub Actions](.github/workflows/release.yml) to build macOS, Linux, and Windows installers and publish them to GitHub Releases.
 
 ## Usage
 
