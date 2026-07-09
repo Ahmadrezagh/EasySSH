@@ -1,0 +1,5 @@
+pexpect>=4.9.0
+sshuttle>=1.1.0
+
+# Windows VPN mode (optional):
+# pydivert>=2.1.0
