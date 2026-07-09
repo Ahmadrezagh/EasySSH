@@ -9,13 +9,24 @@ block_cipher = None
 project_dir = Path(SPECPATH)
 icon_path = project_dir / "img" / "logo.png"
 icns_path = project_dir / "img" / "logo.icns"
+ico_path = project_dir / "img" / "logo.ico"
 
 hiddenimports = collect_submodules("sshuttle") + [
     "pexpect",
+    "pexpect.popen_spawn",
     "ptyprocess",
     "tkinter",
     "tkinter.ttk",
 ]
+
+if sys.platform == "win32" and ico_path.exists():
+    exe_icon = str(ico_path)
+elif sys.platform == "darwin":
+    exe_icon = None
+elif icon_path.exists():
+    exe_icon = str(icon_path)
+else:
+    exe_icon = None
 
 a = Analysis(
     ["main.py"],
@@ -42,14 +53,14 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(icon_path) if icon_path.exists() and sys.platform != "darwin" else None,
+    icon=exe_icon,
 )
 
 coll = COLLECT(
@@ -58,7 +69,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name="EasySSH",
 )

@@ -36,6 +36,7 @@ build/
 dist/
 *.spec.bak
 img/logo.icns
+img/logo.ico
 
 # IDE / editor
 .idea/

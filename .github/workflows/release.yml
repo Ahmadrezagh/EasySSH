@@ -9,76 +9,90 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            artifact: EasySSH-macOS.zip
-            asset_name: EasySSH-macOS
-          - os: ubuntu-latest
-            artifact: EasySSH-Linux.tar.gz
-            asset_name: EasySSH-Linux
-          - os: windows-latest
-            artifact: EasySSH-Windows.zip
-            asset_name: EasySSH-Windows
-
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-build.txt
-
       - name: Create macOS icon
-        if: runner.os == 'macOS'
         run: bash scripts/make_icns.sh
-
       - name: Build app
         run: pyinstaller --noconfirm easyssh.spec
-
+      - name: Sign app (adhoc)
+        run: codesign --force --deep --sign - dist/EasySSH.app
       - name: Package macOS app
-        if: runner.os == 'macOS'
         run: |
           cd dist
           ditto -c -k --sequesterRsrc --keepParent EasySSH.app ../EasySSH-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EasySSH-macOS
+          path: EasySSH-macOS.zip
 
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-build.txt
+      - name: Build app
+        run: pyinstaller --noconfirm easyssh.spec
       - name: Package Linux app
-        if: runner.os == 'Linux'
         run: |
           cd dist
           tar -czf ../EasySSH-Linux.tar.gz EasySSH
-
-      - name: Package Windows app
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Compress-Archive -Path dist/EasySSH -DestinationPath EasySSH-Windows.zip
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset_name }}
-          path: ${{ matrix.artifact }}
+          name: EasySSH-Linux
+          path: EasySSH-Linux.tar.gz
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-build.txt pillow
+      - name: Create Windows icon
+        run: python scripts/make_ico.py
+      - name: Build app
+        run: pyinstaller --noconfirm easyssh.spec
+      - name: Package Windows app
+        shell: pwsh
+        run: Compress-Archive -Path dist/EasySSH -DestinationPath EasySSH-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EasySSH-Windows
+          path: EasySSH-Windows.zip
 
   release:
     name: Publish GitHub Release
-    needs: build
+    needs: [build-macos, build-linux, build-windows]
     runs-on: ubuntu-latest
+    if: needs.build-macos.result == 'success'
 
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
@@ -87,7 +101,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: |
-            artifacts/EasySSH-macOS.zip
-            artifacts/EasySSH-Linux.tar.gz
-            artifacts/EasySSH-Windows.zip
+          files: artifacts/**

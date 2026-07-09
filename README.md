@@ -66,11 +66,27 @@ Download the latest release for your platform from
 
 | Platform | Download | How to run |
 |----------|----------|------------|
-| **macOS** | `EasySSH-macOS.zip` | Unzip → open `EasySSH.app` |
+| **macOS** | `EasySSH-macOS.zip` | Unzip → open `EasySSH.app` (see below) |
 | **Windows** | `EasySSH-Windows.zip` | Unzip → run `EasySSH/EasySSH.exe` |
 | **Linux** | `EasySSH-Linux.tar.gz` | Extract → run `EasySSH/EasySSH` |
 
 > **Note:** OpenSSH (`ssh`) must still be installed on your system. VPN mode may prompt for admin/root access.
+
+### macOS: "can't be opened" or "damaged"
+
+EasySSH is not signed with an Apple Developer certificate, so macOS Gatekeeper may block it the first time.
+
+**Option A — Right-click open**
+1. Unzip `EasySSH-macOS.zip`
+2. Right-click `EasySSH.app` → **Open**
+3. Click **Open** again in the dialog (only needed once)
+
+**Option B — Terminal**
+```bash
+xattr -cr ~/Downloads/EasySSH.app
+open ~/Downloads/EasySSH.app
+```
+(Adjust the path if you unzipped somewhere else.)
 
 ### Create a new release (maintainers)
 
