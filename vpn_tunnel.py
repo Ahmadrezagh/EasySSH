@@ -16,15 +16,37 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from elevation import elevation_hint, run_elevated_command, run_elevated_script
-from platform_util import find_elevated_python, is_linux, is_macos, is_windows, runtime_dir
+from platform_util import bundle_path, find_vpn_python, is_linux, is_macos, is_windows, runtime_dir
 from tunnel import TunnelConfig
 
 
 def _sshuttle_package_dir() -> Path:
+    """Return the on-disk sshuttle package directory (works in dev and PyInstaller builds)."""
+    if getattr(sys, "frozen", False):
+        bundled = bundle_path("sshuttle")
+        if bundled.is_dir():
+            return bundled
+
+    try:
+        import sshuttle
+
+        package_dir = Path(sshuttle.__path__[0])
+        if package_dir.is_dir():
+            return package_dir
+    except ImportError:
+        pass
+
     spec = importlib.util.find_spec("sshuttle")
     if spec is None or not spec.submodule_search_locations:
         raise RuntimeError("sshuttle is not installed. Run: pip install sshuttle")
-    return Path(next(iter(spec.submodule_search_locations)))
+
+    package_dir = Path(next(iter(spec.submodule_search_locations)))
+    if not package_dir.is_dir():
+        raise RuntimeError(
+            "sshuttle package files are not available on disk. "
+            "Reinstall EasySSH from the latest release."
+        )
+    return package_dir
 
 
 def _stage_sshuttle_runtime(runtime_path: Path) -> tuple[Path, str]:
@@ -38,7 +60,7 @@ def _stage_sshuttle_runtime(runtime_path: Path) -> tuple[Path, str]:
     site_packages.mkdir(parents=True, exist_ok=True)
     shutil.copytree(package_dir, target)
 
-    python_bin = find_elevated_python()
+    python_bin = find_vpn_python()
     return site_packages, python_bin
 
 

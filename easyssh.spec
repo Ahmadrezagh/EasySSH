@@ -5,11 +5,14 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules
 
+import sshuttle
+
 block_cipher = None
 project_dir = Path(SPECPATH)
 icon_path = project_dir / "img" / "logo.png"
 icns_path = project_dir / "img" / "logo.icns"
 ico_path = project_dir / "img" / "logo.ico"
+sshuttle_dir = Path(next(iter(sshuttle.__path__)))
 
 hiddenimports = collect_submodules("sshuttle") + [
     "pexpect",
@@ -32,7 +35,10 @@ a = Analysis(
     ["main.py"],
     pathex=[str(project_dir)],
     binaries=[],
-    datas=[(str(project_dir / "img" / "logo.png"), "img")],
+    datas=[
+        (str(project_dir / "img" / "logo.png"), "img"),
+        (str(sshuttle_dir), "sshuttle"),
+    ],
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

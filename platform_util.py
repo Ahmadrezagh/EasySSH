@@ -100,7 +100,7 @@ def _kill_process_on_port_unix(port: int, use_lsof: bool) -> None:
 
 
 def find_elevated_python() -> str:
-    """Pick a Python interpreter suitable for elevated VPN launches."""
+    """Pick a system Python interpreter for elevated VPN launches."""
     if is_macos():
         candidates = (
             "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
@@ -111,7 +111,6 @@ def find_elevated_python() -> str:
         )
     elif is_windows():
         candidates = (
-            sys.executable,
             shutil.which("python") or "",
             shutil.which("python3") or "",
         )
@@ -120,7 +119,6 @@ def find_elevated_python() -> str:
             "/usr/bin/python3",
             "/usr/local/bin/python3",
             shutil.which("python3") or "",
-            sys.executable,
         )
 
     seen: set[str] = set()
@@ -137,9 +135,29 @@ def find_elevated_python() -> str:
             continue
         return resolved
 
-    if is_windows():
-        return sys.executable
     raise RuntimeError("No system Python found for VPN mode")
+
+
+def find_vpn_python() -> str:
+    """Python interpreter for the elevated sshuttle launcher."""
+    if getattr(sys, "frozen", False):
+        exe = Path(sys.executable)
+        if is_macos():
+            framework = exe.parent.parent / "Frameworks" / "Python.framework" / "Versions"
+            for relative in ("Current/bin/python3", "3.13/bin/python3"):
+                candidate = framework / relative
+                if candidate.is_file():
+                    return str(candidate.resolve())
+        elif is_windows():
+            internal = exe.parent / "_internal" / "python3.dll"
+            if internal.exists():
+                return str(exe.resolve())
+        else:
+            internal_python = exe.parent / "_internal" / "python3"
+            if internal_python.is_file():
+                return str(internal_python.resolve())
+
+    return find_elevated_python()
 
 
 def ssh_command_name() -> str:
